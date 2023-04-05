@@ -110,7 +110,7 @@ const checkCell = (
 
 const solve = (
   pussule_str: string[]
-): { ans: number[][]; solved: boolean; round: number } | null => {
+): { ans: number[][]; solved: boolean; round: number } => {
   let pussule = pussule_str.map((row) => row.split("").map((c) => parseInt(c)));
   let solved = _.cloneDeep(pussule);
   let changedCells: Cell[] = [];
@@ -119,7 +119,7 @@ const solve = (
   const cells = init(pussule, solvedCells);
   if (cells.length === 0) {
     console.log("pussule size is not 9x9");
-    return null;
+    return;
   }
 
   let operated = 0;
