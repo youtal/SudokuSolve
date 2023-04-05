@@ -1,0 +1,17 @@
+node_modules/
+
+.vscode/
+
+.idea/
+
+dist/
+
+.secret.json
+
+.tscache/
+
+*.tmp.txt
+
+pnpm-lock.yaml
+
+package-lock.json

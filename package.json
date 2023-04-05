@@ -1,0 +1,20 @@
+{
+  "name": "sudokusolve",
+  "version": "1.0.0",
+  "description": "this project is to solve sudoku pussules",
+  "main": "index.ts",
+  "scripts": {
+    "test": "jest",
+    "build": "tsc",
+    "start": "tsc && node dist/index.js"
+  },
+  "author": "youtal",
+  "license": "ISC",
+  "dependencies": {
+    "jest": "^26.6.3",
+    "ts-jest": "^26.5.4",
+    "@types/jest": "^26.0.20",
+    "typescript": "^4.1.3",
+    "lodash": "^4.17.21"
+  }
+}
