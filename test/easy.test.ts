@@ -1,4 +1,5 @@
 import solveSudoku from "../src/index";
+import verify from "../src/verify";
 
 const pussules_esay = [
   [
@@ -18,7 +19,7 @@ describe("solve", () => {
   test("solve", () => {
     pussules_esay.forEach((pussule) => {
       const result = solveSudoku(pussule);
-      expect(result.solved).toBe(true);
+      expect(verify(result.ans)).toBe(true);
     });
   });
 });

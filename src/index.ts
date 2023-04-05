@@ -145,3 +145,4 @@ const solve = (
 };
 
 export default solve;
+export { CellProperty, Cell };
