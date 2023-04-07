@@ -1,4 +1,4 @@
-import solveSudoku from "../src/index";
+import Sudoku from "../src/Sudoku";
 import verify from "../src/verify";
 
 const pussules_esay = [
@@ -18,8 +18,9 @@ const pussules_esay = [
 describe("solve", () => {
   test("solve", () => {
     pussules_esay.forEach((pussule) => {
-      const result = solveSudoku(pussule);
-      expect(verify(result.ans)).toBe(true);
+      let sudoku = new Sudoku(pussule);
+      sudoku.solve();
+      expect(verify(sudoku.getAnswer())).toBe(true);
     });
   });
 });

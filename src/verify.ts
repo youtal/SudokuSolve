@@ -1,5 +1,3 @@
-import { CellProperty } from "@/index";
-
 export default (ans: number[][]): boolean => {
   const ans2arr = ans.flat();
   for (let i = 0; i < 9; ++i) {
