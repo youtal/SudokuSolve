@@ -1,6 +1,6 @@
 import Sudoku from "./Sudoku";
 
-const pussules_esay = [
+const pussules_easy = [
   "002080060",
   "056917030",
   "040050871",
@@ -12,6 +12,6 @@ const pussules_esay = [
   "025460000",
 ];
 
-let sudoku = new Sudoku(pussules_esay);
+let sudoku = new Sudoku(pussules_easy);
 sudoku.solve();
 console.log(sudoku.getAnswer());

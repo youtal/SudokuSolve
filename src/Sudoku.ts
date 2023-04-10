@@ -1,123 +1,119 @@
 import * as _ from "lodash";
 
+enum property {
+  row,
+  column,
+  block,
+}
+
 class Sudoku {
   answer: number[][];
-  cells: Cell[];
-  solvedCells: Set<number>;
-  changedCells: Set<Cell>;
-  constructor(puzzle_str: string[]) {
-    //将puzzle转换为number[][]
-    const puzzle = puzzle_str.map((row) =>
-      row.split("").map((value) => parseInt(value))
-    );
+  //每个数字使用27位二进制数表示，前9位代表行，中间9位代表列，后9位代表块
+  //数组长度为9，每个前9位记录第i行可用的数字，中间9位记录第i列可用的数字，后9位记录第i块可用的数字
+  valueCandidateSymbol: number[];
 
-    //检查输入是否合法
-    if (puzzle.length !== 9 || puzzle.some((row) => row.length !== 9)) {
-      throw new Error("Invalid input");
-    }
-
-    //初始化
-    this.answer = _.cloneDeep(puzzle);
-    this.cells = [];
-    this.solvedCells = new Set();
-    this.changedCells = new Set();
-    for (let i = 0; i < 9; i++) {
-      for (let j = 0; j < 9; j++) {
-        //无论该位置是否有数字，都将其初始化，将未知数字的value设为0x1ff
-        this.cells.push({
-          row: i,
-          column: j,
-          block: Math.floor(i / 3) * 3 + Math.floor(j / 3),
-          value: this.answer[i][j] === 0 ? 0x1ff : 1 << (this.answer[i][j] - 1),
-          index: i * 9 + j,
-        });
-        //将已知数字的index加入solvedCells
-        if (this.answer[i][j] !== 0) {
-          this.solvedCells.add(i * 9 + j);
+  constructor(puzzle_str: String[]) {
+    //初始化valueCandidateSymbol,将每个数字的前27置为1
+    this.valueCandidateSymbol = new Array(9).fill(0x7ffffff);
+    //this.valueCandidateSymbol.forEach(s=>console.log(s.toString(2)));
+    this.answer = puzzle_str.map((row) => {
+      return row.split("").map((value) => {
+        return parseInt(value);
+      });
+    });
+    //遍历每个数字，将其对应的行、列、块的可用数字置为0
+    this.answer.forEach((row, rowIndex) => {
+      row.forEach((value, columnIndex) => {
+        if (value !== 0) {
+          this.excludeValue(rowIndex, columnIndex, value);
         }
-      }
-    }
+      });
+    });
+    this.valueCandidateSymbol.forEach((s) => console.log(s.toString(2)));
   }
 
-  private operateByCellProperty(
-    cell: Cell,
-    property: CellProperty,
-    checkFollowingCellsOnly: boolean = false
-  ) {
-    //检查该cell是否具有唯一值，不具备则报错
-    const log2Value = Math.log2(cell.value);
-    if (!Number.isInteger(log2Value)) {
-      throw new Error(`Cell ${cell.index} has no unique value: ${cell.value}`);
-    }
-
-    //按照property类型，操作该cell的同一行、同一列或同一宫格内的其他cell，若checkFollowingCellsOnly为true，则只操作该cell的后续cell
-    const cells = this.cells.filter(
-      (c) =>
-        c[property] === cell[property] &&
-        c.index !== cell.index &&
-        !this.solvedCells.has(c.index) &&
-        (checkFollowingCellsOnly ? c.index > cell.index : true)
-    );
-    for (const targetCell of cells) {
-      targetCell.value &= cell.value ^ 0x1ff;
-      this.changedCells.add(targetCell);
-    }
+  private static getBlockIndex(row: number, column: number): number {
+    return Math.floor(row / 3) * 3 + Math.floor(column / 3);
   }
 
-  private operateCell(cell: Cell, checkFollowingCellsOnly: boolean = false) {
-    this.operateByCellProperty(cell, "row", checkFollowingCellsOnly);
-    this.operateByCellProperty(cell, "column", checkFollowingCellsOnly);
-    this.operateByCellProperty(cell, "block", checkFollowingCellsOnly);
+  private index2Coordinate(index: number): Coordinate {
+    return {
+      row: Math.floor(index / 9),
+      column: index % 9,
+      block: Sudoku.getBlockIndex(Math.floor(index / 9), index % 9),
+    };
   }
 
-  private checkCellByProperty(cell: Cell, property: CellProperty): boolean {
-    const masks = this.cells
-      .filter((c) => c[property] === cell[property] && c !== cell)
-      .map((c) => c.value);
-    const mask = masks.reduce((a, b) => a | b) ^ 0x1ff;
-    //const mask = masks.reduce((a, b) => a & b, 0x1ff);
-    const compared = cell.value & mask;
-    const log2Compared = Math.log2(compared);
-    if (Number.isInteger(log2Compared)) {
-      this.answer[cell.row][cell.column] = log2Compared + 1;
-      cell.value = compared;
-      this.solvedCells.add(cell.index);
-      //TODO:直接operate当前cell
-      this.operateCell(cell);
-      return true;
+  //排除某个数字在某个行、列、块中的可能性
+  private excludeValue(row: number, column: number, value: number): void {
+    //检查输入
+    if (
+      row < 0 ||
+      row > 8 ||
+      column < 0 ||
+      column > 8 ||
+      value < 1 ||
+      value > 9 ||
+      !_.isInteger(row) ||
+      !_.isInteger(column) ||
+      !_.isInteger(value)
+    ) {
+      throw new Error(
+        `invalid input: row=${row}, column=${column}, value=${value}`
+      );
     }
-    return false;
+    this.valueCandidateSymbol[row] &=
+      (1 << (value - 1 + property.row * 9)) ^ 0x7ffffff;
+    this.valueCandidateSymbol[column] &=
+      (1 << (value - 1 + property.column * 9)) ^ 0x7ffffff;
+    this.valueCandidateSymbol[Sudoku.getBlockIndex(row, column)] &=
+      (1 << (value - 1 + property.block * 9)) ^ 0x7ffffff;
   }
 
-  private checkCell(cell: Cell): boolean {
-    const log2Value = Math.log2(cell.value);
-    if (Number.isInteger(log2Value)) {
-      this.answer[cell.row][cell.column] = log2Value + 1;
-      this.solvedCells.add(cell.index);
-      this.operateCell(cell);
-      return true;
-    }
+  //获取对应位置的待选标志
+  private getAvailableSymbol(row: number, column: number): number {
     return (
-      this.checkCellByProperty(cell, "row") ||
-      this.checkCellByProperty(cell, "column") ||
-      this.checkCellByProperty(cell, "block")
+      0x1ff &
+      (this.valueCandidateSymbol[row] >> (property.row * 9)) &
+      (this.valueCandidateSymbol[column] >> (property.column * 9)) &
+      (this.valueCandidateSymbol[Sudoku.getBlockIndex(row, column)] >>
+        (property.block * 9))
     );
   }
 
-  private simplifyChangedCells(): void {}
+  //不适用回溯，简单解算出可解算的数字，减少回溯规模
+  private simpleSolve(): void {
+    let [lastCheck, currentCheck] = [0, 0];
+    do {
+      const { row, column } = this.index2Coordinate(currentCheck);
+      //如果当前位置已经有数字，跳过
+      if (this.answer[row][column] !== 0) {
+        currentCheck++;
+        continue;
+      }
+      //获取当前位置的待选标志
+      const availableSymbol = this.getAvailableSymbol(row, column);
+      //如果只有一个可选数字，填入,并排除该数字在该行、列、块中的可能性
+      if (!(availableSymbol & (availableSymbol - 1))) {
+        const value = Math.log2(availableSymbol) + 1;
+        this.answer[row][column] = value;
+        this.excludeValue(row, column, value);
+        //更新lastCheck
+        lastCheck = currentCheck;
+      }
+      currentCheck++;
+      currentCheck %= 80;
+    } while (
+      //lastCheck等于currentCheck遍历完所有位置均无新的解算位置更新
+      lastCheck !== currentCheck
+    );
+  }
 
   public solve(): boolean {
-    //首轮检查
-    this.solvedCells.forEach((index) => this.operateCell(this.cells[index]));
-
-    //while循环，直到changedCells为空
-    while (this.changedCells.size > 0) {
-      //取出changedCells中的第一个cell并移除
-      const cell = this.changedCells.values().next().value;
-      this.changedCells.delete(cell);
-      this.checkCell(cell);
-    }
-
+    this.simpleSolve();
+    //使用valueCandidateSymbol进行验证，如果结算完毕，valueCandidateSymbol中每个数字均为0
+    if (this.valueCandidateSymbol.every((value) => value === 0)) return true;
+    //调用回溯算法
     return true;
   }
 

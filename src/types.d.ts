@@ -6,3 +6,4 @@ interface Cell {
   value: number;
   index: number;
 }
+type Coordinate = Record<CellProperty, number>
