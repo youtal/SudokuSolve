@@ -29,7 +29,7 @@ class Sudoku {
         }
       });
     });
-    this.valueCandidateSymbol.forEach((s) => console.log(s.toString(2)));
+    //this.valueCandidateSymbol.forEach((s) => console.log(s.toString(2)));
   }
 
   private static getBlockIndex(row: number, column: number): number {
